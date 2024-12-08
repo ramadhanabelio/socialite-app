@@ -19,7 +19,7 @@ git clone https://github.com/ramadhanabelio/login-with-socialite.git
 **2.** Go to the project directory:
 
 ```bash
-cd beritaku
+cd login-with-socialite
 ```
 
 **3.** Install JavaScript dependencies using npm:
