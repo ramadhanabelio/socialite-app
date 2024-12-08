@@ -17,19 +17,38 @@ class AuthController extends Controller
 
     public function handleGoogleCallback()
     {
-        $googleUser = Socialite::driver('google')->stateless()->user();
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
-        $user = User::firstOrCreate(
-            ['email' => $googleUser->getEmail()],
-            [
-                'name' => $googleUser->getName(),
-                'password' => bcrypt('password'),
-            ]
-        );
+            if (!$googleUser) {
+                return redirect('/')->withErrors('Tidak ada data yang diterima dari Google.');
+            }
 
-        Auth::login($user);
+            $email = $googleUser->getEmail();
+            $name = $googleUser->getName();
+            $avatarUrl = $googleUser->getAvatar();
+            $loginType = 'google';
 
-        return redirect('/home');
+            if (!$email) {
+                return redirect('/')->withErrors('Email tidak ditemukan pada akun Google Anda.');
+            }
+
+            $user = User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $name,
+                    'password' => bcrypt('password'),
+                    'avatar' => $avatarUrl,
+                    'login_type' => $loginType,
+                ]
+            );
+
+            Auth::login($user);
+
+            return redirect('/home');
+        } catch (\Exception $e) {
+            return redirect('/')->withErrors('Gagal login dengan Google: ' . $e->getMessage());
+        }
     }
 
     public function redirectToGitHub()
@@ -49,17 +68,19 @@ class AuthController extends Controller
             $email = $githubUser->getEmail();
             $name = $githubUser->getName() ?? $githubUser->getNickname();
             $avatarUrl = $githubUser->getAvatar();
+            $loginType = 'github';
 
             if (!$email) {
                 return redirect('/')->withErrors('Email tidak ditemukan pada akun GitHub Anda.');
             }
 
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $email],
                 [
                     'name' => $name,
                     'password' => bcrypt('password'),
                     'avatar' => $avatarUrl,
+                    'login_type' => $loginType,
                 ]
             );
 
